@@ -1,7 +1,7 @@
 {
   "name": "review-image-generator",
   "version": "1.0.0",
-  "description": "Simple microservice that turns a Google review into a social-ready PNG image.",
+  "description": "Microservice that turns a review into a social-media-ready PNG image.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,8 +11,14 @@
   },
   "dependencies": {
     "express": "^4.19.0",
-    "puppeteer": "^23.0.0",
+    "puppeteer": "^22.6.0",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5"
+  },
+  "puppeteer": {
+    "args": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ]
   }
 }
