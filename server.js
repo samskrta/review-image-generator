@@ -1,69 +1,105 @@
-import express from "express";
-import { createCanvas, loadImage } from "canvas";
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
+const puppeteer = require("puppeteer");
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// API endpoint: POST /generate
-app.post("/generate", async (req, res) => {
-  const { name, rating, review, brandColor, logoUrl } = req.body;
+app.use(cors());
+app.use(bodyParser.json());
 
+let browserPromise = null;
+
+// Lazy-launch browser once, reuse it
+async function getBrowser() {
+  if (!browserPromise) {
+    browserPromise = puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    });
+  }
+  return browserPromise;
+}
+
+// Helper to escape HTML
+function escapeHtml(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Health check route
+app.get("/", (req, res) => {
+  res.send("✅ review-image-generator is running");
+});
+
+/**
+ * POST /review-image
+ * Body JSON:
+ * {
+ *   "reviewer_name": "Barbara K",
+ *   "rating": 5,
+ *   "review_text": "We called Appliance GrandMasters based on a recommendation...",
+ *   "platform": "Google" // optional
+ * }
+ *
+ * Returns: PNG image buffer
+ */
+app.post("/review-image", async (req, res) => {
   try {
-    const width = 1080;
-    const height = 1350;
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext("2d");
+    const {
+      reviewer_name = "Happy Customer",
+      rating = 5,
+      review_text = "",
+      platform = "Google"
+    } = req.body || {};
 
-    // Background
-    ctx.fillStyle = brandColor || "#ffffff";
-    ctx.fillRect(0, 0, width, height);
+    const safeName = escapeHtml(reviewer_name);
+    const safeReview = escapeHtml(review_text);
+    const safePlatform = escapeHtml(platform);
 
-    // Title
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 60px Arial";
-    ctx.fillText(`⭐ ${rating} Review`, 60, 120);
+    // Clamp rating between 1 and 5
+    const stars = Math.max(1, Math.min(5, Number(rating) || 5));
 
-    // Customer Name
-    ctx.font = "bold 50px Arial";
-    ctx.fillText(name, 60, 230);
+    // Load HTML template
+    const templatePath = path.join(__dirname, "template.html");
+    let html = fs.readFileSync(templatePath, "utf8");
 
-    // Review Text (wrapped)
-    ctx.font = "36px Arial";
-    wrapText(ctx, review, 60, 320, 960, 48);
+    // Replace placeholders
+    html = html
+      .replace(/{{REVIEWER_NAME}}/g, safeName)
+      .replace(/{{PLATFORM}}/g, safePlatform)
+      .replace(/{{REVIEW_TEXT}}/g, safeReview)
+      .replace(/{{RATING}}/g, String(stars));
 
-    // Logo (optional)
-    if (logoUrl) {
-      try {
-        const logo = await loadImage(logoUrl);
-        ctx.drawImage(logo, width - 240, height - 240, 180, 180);
-      } catch {}
-    }
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+
+    await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: 2 });
+
+    await page.setContent(html, { waitUntil: "networkidle0" });
+
+    const buffer = await page.screenshot({
+      type: "png",
+      fullPage: true
+    });
+
+    await page.close();
 
     res.set("Content-Type", "image/png");
-    res.send(canvas.toBuffer());
+    res.send(buffer);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error generating image:", err);
+    res.status(500).json({ error: "Failed to generate image" });
   }
 });
 
-// Function to wrap text automatically
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(" ");
-  let line = "";
+app.listen(PORT, () => {
+  console.log(`🚀 review-image-generator listening on port ${PORT}`);
+});
 
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + " ";
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n] + " ";
-      y += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line, x, y);
-}
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
