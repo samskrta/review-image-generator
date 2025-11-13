@@ -1,61 +1,72 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 const puppeteer = require("puppeteer");
 
 const app = express();
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "10mb" }));
 
-// Health check (so Railway knows the service is alive)
+// --- Health Check ---
 app.get("/", (req, res) => {
-  res.send("Review Image Generator is running 🚀");
+  res.status(200).send("Review Image Generator is running 🚀");
 });
 
-// MAIN ROUTE — Generate PNG
-app.post("/generate-image", async (req, res) => {
+// --- POST /render  (MAIN ENDPOINT) ---
+app.post("/render", async (req, res) => {
   try {
-    const { reviewer, rating, review_text } = req.body;
+    const { reviewer_name, rating, review_text } = req.body;
 
-    if (!reviewer || !rating || !review_text) {
+    if (!reviewer_name || !rating || !review_text) {
       return res.status(400).json({
-        error: "Missing required fields: reviewer, rating, review_text"
+        error: "Missing required fields: reviewer_name, rating, review_text",
       });
     }
 
+    // Load Template
+    const templatePath = path.join(__dirname, "template.html");
+    let templateHtml = fs.readFileSync(templatePath, "utf8");
+
+    // Replace placeholders
+    templateHtml = templateHtml
+      .replace("{{reviewer_name}}", reviewer_name)
+      .replace("{{rating}}", "⭐".repeat(rating))
+      .replace("{{review_text}}", review_text);
+
+    // Launch browser
     const browser = await puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+      args: ["--no-sandbox", "--disable-setuid-userns"],
     });
 
     const page = await browser.newPage();
-
-    // Load the HTML template
-    const fs = require("fs");
-    const template = fs.readFileSync("./template.html", "utf8");
-
-    const html = template
-      .replace("{{reviewer}}", reviewer)
-      .replace("{{rating}}", rating)
-      .replace("{{review_text}}", review_text);
-
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.setContent(templateHtml, { waitUntil: "networkidle0" });
 
     const buffer = await page.screenshot({
-      type: "png"
+      type: "png",
+      fullPage: true,
     });
 
     await browser.close();
 
-    res.set("Content-Type", "image/png");
-    res.send(buffer);
-
-  } catch (err) {
-    console.error("Error generating image:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    // Return Base64 PNG
+    res.json({
+      success: true,
+      image_base64: buffer.toString("base64"),
+    });
+  } catch (error) {
+    console.error("Render error:", error);
+    res.status(500).json({
+      error: "Rendering failed",
+      details: error.message,
+    });
   }
 });
 
+// --- Start server ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on PORT ${PORT}`);
+});
