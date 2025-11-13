@@ -1,72 +1,55 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
-const puppeteer = require("puppeteer");
 
 const app = express();
 
 app.use(cors());
-app.use(bodyParser.json({ limit: "10mb" }));
+app.use(bodyParser.json());
 
-// --- Health Check ---
 app.get("/", (req, res) => {
-  res.status(200).send("Review Image Generator is running 🚀");
+  res.send("Review Image Generator API is running.");
 });
 
-// --- POST /render  (MAIN ENDPOINT) ---
-app.post("/render", async (req, res) => {
+// ========== MAIN POST ROUTE (fixes Cannot POST /) ==========
+app.post("/generate", async (req, res) => {
   try {
-    const { reviewer_name, rating, review_text } = req.body;
+    const { reviewer_name, rating, review_text, brand_color } = req.body;
 
     if (!reviewer_name || !rating || !review_text) {
       return res.status(400).json({
-        error: "Missing required fields: reviewer_name, rating, review_text",
+        error: "Missing required fields: reviewer_name, rating, review_text"
       });
     }
 
-    // Load Template
+    // Load HTML template
     const templatePath = path.join(__dirname, "template.html");
-    let templateHtml = fs.readFileSync(templatePath, "utf8");
+    let html = fs.readFileSync(templatePath, "utf8");
 
-    // Replace placeholders
-    templateHtml = templateHtml
-      .replace("{{reviewer_name}}", reviewer_name)
+    // Inject dynamic content
+    html = html
+      .replace("{{name}}", reviewer_name)
       .replace("{{rating}}", "⭐".repeat(rating))
-      .replace("{{review_text}}", review_text);
+      .replace("{{review}}", review_text)
+      .replace("{{brand_color}}", brand_color || "#E63946");
 
-    // Launch browser
+    // Launch Puppeteer (headless browser)
     const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-userns"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();
-    await page.setContent(templateHtml, { waitUntil: "networkidle0" });
+    await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const buffer = await page.screenshot({
-      type: "png",
-      fullPage: true,
-    });
-
+    const buffer = await page.screenshot({ type: "png" });
     await browser.close();
 
-    // Return Base64 PNG
-    res.json({
-      success: true,
-      image_base64: buffer.toString("base64"),
-    });
-  } catch (error) {
-    console.error("Render error:", error);
-    res.status(500).json({
-      error: "Rendering failed",
-      details: error.message,
-    });
-  }
-});
+    res.set("Content-Type", "image/png");
+    res.send(buffer);
 
-// --- Start server ---
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on PORT ${PORT}`);
-});
+  } catch (err) {
+    console.error("Error generating image:", err);
+    res.status(500).json({ error: "Internal s
