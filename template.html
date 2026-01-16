@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Review Card</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     * {
       box-sizing: border-box;
@@ -12,152 +12,313 @@
     }
     body {
       width: 1080px;
-      height: 1350px;
-      font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(135deg, #b11326 0%, #791c2a 40%, #111827 100%);
+      height: 1080px;
+      font-family: "Montserrat", sans-serif;
+      background: {{BRAND_COLOR_DARK}};
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Header Section */
+    .header {
+      padding: 48px 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .header-left {
+      display: flex;
+      flex-direction: column;
+    }
+    .header-title {
+      font-family: "Playfair Display", serif;
+    }
+    .header-title .line1 {
+      font-size: 52px;
+      font-weight: 700;
+      color: #e8a838;
+      display: block;
+    }
+    .header-title .line2 {
+      font-size: 52px;
+      font-weight: 700;
+      color: #ffffff;
+      display: block;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+    .tech-block {
+      display: {{TECH_DISPLAY}};
+      align-items: center;
+      gap: 16px;
+    }
+    .tech-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .tech-name {
+      font-size: 26px;
+      font-weight: 700;
+      color: #ffffff;
+      text-align: right;
+    }
+    .tech-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+    .tech-photo-wrapper {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #ffffff;
+      flex-shrink: 0;
+      background: #ccc;
+    }
+    .tech-photo-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .logo-container {
+      width: 140px;
+      height: 140px;
+      min-width: 140px;
+      min-height: 140px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #fff;
+      flex-shrink: 0;
+      position: relative;
+      font-size: 0;
+      color: transparent;
+    }
+    .logo-container img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    /* Card Section */
+    .card-wrapper {
+      flex: 1;
+      padding: 0 56px;
+      display: flex;
+      flex-direction: column;
+    }
+    .review-card {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 48px 56px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .review-content {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #111827;
+      max-height: 70%;
+      position: relative;
     }
-    .card {
-      width: 880px;
-      max-height: 1050px;
-      background: #ffffff;
-      border-radius: 32px;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
-      padding: 48px 56px 40px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+    .quote-mark {
+      position: absolute;
+      font-family: "Playfair Display", serif;
+      font-size: 200px;
+      color: rgba(30, 42, 74, 0.06);
+      line-height: 1;
+      pointer-events: none;
     }
-    .header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
+    .quote-mark.open {
+      top: -20px;
+      left: 0;
     }
-    .name-block {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .name {
-      font-size: 24px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-    }
-    .handle {
-      font-size: 13px;
-      color: #6b7280;
-    }
-    .brand-pill {
-      font-size: 11px;
-      text-transform: uppercase;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #f3f4f6;
-      color: #374151;
-      font-weight: 600;
-    }
-    .stars {
-      display: flex;
-      gap: 4px;
-      margin: 10px 0 18px;
-      font-size: 20px;
-      color: #f59e0b;
+    .quote-mark.close {
+      bottom: 20px;
+      right: 0;
     }
     .review-text {
-      font-size: 16px;
-      line-height: 1.8;
-      color: #111827;
-      white-space: pre-wrap;
-      max-height: 560px;
-      overflow: hidden;
+      font-family: "Playfair Display", serif;
+      font-style: italic;
+      font-weight: 600;
+      line-height: 1.5;
+      color: #1e2a4a;
+      text-align: center;
+      padding: 0 40px;
     }
-    .review-text strong {
-      font-weight: 700;
-    }
-    .footer-row {
+    .reviewer-row {
       display: flex;
+      justify-content: flex-end;
       align-items: center;
-      justify-content: space-between;
-      margin-top: 34px;
+      gap: 20px;
+      padding-top: 24px;
     }
-    .logo-badge {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .reviewer-name {
+      font-family: "Playfair Display", serif;
+      font-size: 32px;
+      font-style: italic;
+      color: #1e2a4a;
     }
-    .logo-circle {
-      width: 54px;
-      height: 54px;
-      border-radius: 999px;
-      background: #111827;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #f9fafb;
-      font-weight: 700;
-      font-size: 26px;
-    }
-    .logo-text {
+    
+    /* Footer Section */
+    .footer {
+      background: {{BRAND_COLOR}};
+      padding: 40px 56px 48px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 12px;
     }
-    .logo-title {
-      font-size: 13px;
+    .footer-company {
+      font-size: 36px;
       font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
     }
-    .logo-sub {
-      font-size: 11px;
-      color: #6b7280;
+    .footer-stars {
+      font-size: 42px;
+      color: #fbbf24;
+      letter-spacing: 8px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
-    .site {
-      font-size: 13px;
-      font-weight: 600;
-      color: #b11326;
+    .footer-phone {
+      background: {{BRAND_COLOR_DARK}};
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      padding: 16px 56px;
+      border-radius: 8px;
+      margin-top: 12px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ========== LOW RATING STARK MODE ========== */
+    body.low-rating {
+      background: #1a1a1a;
+    }
+    .low-rating .header-title .line1,
+    .low-rating .header-title .line2 {
+      color: #666666;
+    }
+    .low-rating .header-title .line1 {
+      color: #888888;
+    }
+    .low-rating .tech-photo-wrapper,
+    .low-rating .tech-label,
+    .low-rating .logo-container {
+      display: none !important;
+    }
+    .low-rating .tech-name {
+      color: #999999;
+      font-size: 22px;
+    }
+    .low-rating .review-card {
+      background: #f5f5f5;
+      box-shadow: none;
+      border: 2px solid #333;
+    }
+    .low-rating .quote-mark {
+      display: none;
+    }
+    .low-rating .review-text {
+      color: #333333;
+      font-style: normal;
+    }
+    .low-rating .reviewer-name {
+      color: #555555;
+    }
+    .low-rating .footer {
+      background: #2a2a2a;
+    }
+    .low-rating .footer-company,
+    .low-rating .footer-phone {
+      display: none;
+    }
+    .low-rating .footer-stars {
+      color: #888888;
+      font-size: 48px;
+      letter-spacing: 12px;
     }
   </style>
 </head>
-<body>
-  <div class="card">
-    <div>
-      <div class="header-row">
-        <div class="name-block">
-          <div class="name">{{REVIEWER_NAME}}</div>
-          <div class="handle">@appliancegm GBP</div>
-        </div>
-        <div class="brand-pill">{{PLATFORM}} Review</div>
-      </div>
-
-      <div class="stars">
-        <!-- We'll just show up to 5 filled stars visually -->
-        <span>★</span>
-        <span>★</span>
-        <span>★</span>
-        <span>★</span>
-        <span>★</span>
-      </div>
-
-      <div class="review-text">
-        {{REVIEW_TEXT}}
+<body class="{{LOW_RATING_CLASS}}">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">
+        <span class="line1">Our Customer</span>
+        <span class="line2">Reviews</span>
       </div>
     </div>
-
-    <div class="footer-row">
-      <div class="logo-badge">
-        <div class="logo-circle">AG</div>
-        <div class="logo-text">
-          <div class="logo-title">Appliance GrandMasters</div>
-          <div class="logo-sub">Appliance Repair Experts</div>
+    <div class="header-right">
+      <div class="tech-block">
+        <div class="tech-info">
+          <span class="tech-label">Your Technician</span>
+          <span class="tech-name">{{TECH_NAME}}</span>
+        </div>
+        <div class="tech-photo-wrapper">
+          <img src="{{TECH_PHOTO_URL}}" alt="Technician" />
         </div>
       </div>
-      <div class="site">appliancegm.com</div>
+      <div class="logo-container">
+        <img src="{{LOGO_URL}}" alt="Logo" />
+      </div>
     </div>
   </div>
+  
+  <div class="card-wrapper">
+    <div class="review-card">
+      <div class="review-content">
+        <span class="quote-mark open">"</span>
+        <div class="review-text" id="reviewText">
+          {{REVIEW_TEXT}}
+        </div>
+        <span class="quote-mark close">"</span>
+      </div>
+      <div class="reviewer-row">
+        <span class="reviewer-name">{{REVIEWER_NAME}}</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <div class="footer-company">{{COMPANY_NAME}}</div>
+    <div class="footer-stars">{{STARS}}</div>
+    <div class="footer-phone">{{COMPANY_PHONE}}</div>
+  </div>
+
+  <script>
+    // Dynamic font sizing for review text
+    (function() {
+      const container = document.querySelector('.review-content');
+      const text = document.getElementById('reviewText');
+      const containerHeight = container.offsetHeight * 0.7;
+      const containerWidth = container.offsetWidth;
+      
+      let fontSize = 48; // Start large
+      text.style.fontSize = fontSize + 'px';
+      
+      // Reduce font size until text fits
+      while ((text.scrollHeight > containerHeight || text.scrollWidth > containerWidth) && fontSize > 18) {
+        fontSize -= 2;
+        text.style.fontSize = fontSize + 'px';
+      }
+    })();
+  </script>
 </body>
 </html>

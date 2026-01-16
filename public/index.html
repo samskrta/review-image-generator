@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Image Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-input: #1a1a24;
+      --border: #2a2a3a;
+      --accent: #c41230;
+      --accent-glow: rgba(196, 18, 48, 0.3);
+      --text: #f4f4f5;
+      --text-muted: #71717a;
+      --success: #22c55e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(196, 18, 48, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(30, 42, 74, 0.2), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      animation: fadeUp 0.6s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), #ff4757);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 8px 32px var(--accent-glow);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-top: 0.5rem;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      animation: fadeUp 0.6s ease-out;
+      animation-fill-mode: backwards;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-title::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.875rem 1rem;
+      font-family: inherit;
+      font-size: 1rem;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .rating-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .star-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: var(--text-muted);
+    }
+
+    .star-btn:hover {
+      transform: scale(1.1);
+      border-color: #f59e0b;
+    }
+
+    .star-btn.active {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      border-color: #f59e0b;
+      color: #1a1a24;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #ff4757);
+      color: white;
+      box-shadow: 0 4px 24px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px var(--accent-glow);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      margin-top: 0.75rem;
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .preview-area {
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 3rem;
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      animation: scaleIn 0.4s ease-out;
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--success);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(34, 197, 94, 0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .tech-preview {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .tech-preview img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--accent);
+    }
+
+    .tech-preview span {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-pattern"></div>
+  
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">⭐</div>
+      </div>
+      <h1>Review Image Generator</h1>
+      <p class="subtitle">Transform customer reviews into shareable social graphics</p>
+    </header>
+
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-title">Review Details</div>
+        
+        <form id="reviewForm">
+          <div class="form-group">
+            <label for="reviewer_name">Reviewer Name</label>
+            <input type="text" id="reviewer_name" name="reviewer_name" placeholder="Gail S." required />
+          </div>
+
+          <div class="row">
+            <div class="form-group">
+              <label for="technician">Technician</label>
+              <select id="technician" name="technician">
+                <option value="">None</option>
+              </select>
+              <div class="tech-preview" id="techPreview" style="display: none;">
+                <img id="techPreviewImg" src="" alt="Technician" />
+                <span id="techPreviewName"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Rating</label>
+              <div class="rating-group">
+                <button type="button" class="star-btn active" data-rating="1">★</button>
+                <button type="button" class="star-btn active" data-rating="2">★</button>
+                <button type="button" class="star-btn active" data-rating="3">★</button>
+                <button type="button" class="star-btn active" data-rating="4">★</button>
+                <button type="button" class="star-btn active" data-rating="5">★</button>
+              </div>
+              <input type="hidden" id="rating" name="rating" value="5" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="review_text">Review Text</label>
+            <textarea id="review_text" name="review_text" placeholder="The technicians were so knowledgeable and kind... explained everything to me in detail." required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="generateBtn">
+            <span>🎨</span> Generate Image
+          </button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Preview</div>
+        
+        <div class="preview-area" id="previewArea">
+          <div class="empty-state">
+            <div class="empty-state-icon">🖼️</div>
+            <p>Your generated image will appear here</p>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" id="downloadBtn" style="display: none;">
+          <span>⬇️</span> Download Image
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Image downloaded!</div>
+
+  <script>
+    const form = document.getElementById('reviewForm');
+    const previewArea = document.getElementById('previewArea');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const toast = document.getElementById('toast');
+    const starBtns = document.querySelectorAll('.star-btn');
+    const ratingInput = document.getElementById('rating');
+    const techSelect = document.getElementById('technician');
+    const techPreview = document.getElementById('techPreview');
+    const techPreviewImg = document.getElementById('techPreviewImg');
+    const techPreviewName = document.getElementById('techPreviewName');
+    
+    let currentImageUrl = null;
+    let technicians = [];
+
+    // Load technicians
+    async function loadTechnicians() {
+      try {
+        const res = await fetch('/api/technicians');
+        technicians = await res.json();
+        
+        technicians.forEach(tech => {
+          const opt = document.createElement('option');
+          opt.value = tech.url;
+          opt.textContent = tech.name;
+          techSelect.appendChild(opt);
+        });
+      } catch (err) {
+        console.error('Failed to load technicians:', err);
+      }
+    }
+    loadTechnicians();
+
+    // Technician preview
+    techSelect.addEventListener('change', () => {
+      const url = techSelect.value;
+      if (url) {
+        techPreviewImg.src = url;
+        techPreviewName.textContent = techSelect.options[techSelect.selectedIndex].text;
+        techPreview.style.display = 'flex';
+      } else {
+        techPreview.style.display = 'none';
+      }
+    });
+
+    // Star rating interaction
+    starBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rating = parseInt(btn.dataset.rating);
+        ratingInput.value = rating;
+        
+        starBtns.forEach(star => {
+          const starRating = parseInt(star.dataset.rating);
+          star.classList.toggle('active', starRating <= rating);
+        });
+      });
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      generateBtn.disabled = true;
+      generateBtn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;"></span> Generating...';
+      
+      previewArea.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <span class="status-text">Rendering your review card...</span>
+        </div>
+      `;
+      downloadBtn.style.display = 'none';
+
+      const selectedTech = techSelect.options[techSelect.selectedIndex];
+      const formData = {
+        reviewer_name: document.getElementById('reviewer_name').value,
+        rating: parseInt(ratingInput.value),
+        review_text: document.getElementById('review_text').value,
+        tech_photo_url: techSelect.value || null,
+        tech_name: techSelect.value ? selectedTech.textContent : null
+      };
+
+      try {
+        const response = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) throw new Error('Generation failed');
+
+        const blob = await response.blob();
+        if (currentImageUrl) URL.revokeObjectURL(currentImageUrl);
+        currentImageUrl = URL.createObjectURL(blob);
+
+        previewArea.innerHTML = `<img src="${currentImageUrl}" alt="Generated Review" class="preview-image" />`;
+        downloadBtn.style.display = 'flex';
+        
+      } catch (err) {
+        previewArea.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">❌</div>
+            <p>Failed to generate image. Please try again.</p>
+          </div>
+        `;
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<span>🎨</span> Generate Image';
+      }
+    });
+
+    // Download button
+    downloadBtn.addEventListener('click', () => {
+      if (!currentImageUrl) return;
+      
+      const link = document.createElement('a');
+      link.href = currentImageUrl;
+      link.download = `review-${Date.now()}.png`;
+      link.click();
+
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    });
+  </script>
+</body>
+</html>
