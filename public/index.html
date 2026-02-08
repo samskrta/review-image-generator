@@ -449,6 +449,38 @@
     .drag-zone input[type="file"] {
       display: none;
     }
+
+    .btn-slack {
+      background: #4A154B;
+      color: white;
+      border: 1px solid #611f69;
+      margin-top: 0.75rem;
+    }
+
+    .btn-slack:hover {
+      background: #611f69;
+    }
+
+    .btn-slack:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-slack .slack-icon {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background: white;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm10.124 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834zm-1.271 0a2.528 2.528 0 0 1-2.521 2.521 2.528 2.528 0 0 1-2.521-2.521V2.522A2.528 2.528 0 0 1 15.166 0a2.528 2.528 0 0 1 2.521 2.522v6.312zm-2.521 10.124a2.528 2.528 0 0 1 2.521 2.52A2.528 2.528 0 0 1 15.166 24a2.528 2.528 0 0 1-2.521-2.522v-2.52h2.521zm0-1.271a2.528 2.528 0 0 1-2.521-2.521 2.528 2.528 0 0 1 2.521-2.521h6.312A2.528 2.528 0 0 1 24 15.166a2.528 2.528 0 0 1-2.522 2.521h-6.312z'/%3E%3C/svg%3E") no-repeat center / contain;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm10.124 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834zm-1.271 0a2.528 2.528 0 0 1-2.521 2.521 2.528 2.528 0 0 1-2.521-2.521V2.522A2.528 2.528 0 0 1 15.166 0a2.528 2.528 0 0 1 2.521 2.522v6.312zm-2.521 10.124a2.528 2.528 0 0 1 2.521 2.52A2.528 2.528 0 0 1 15.166 24a2.528 2.528 0 0 1-2.521-2.522v-2.52h2.521zm0-1.271a2.528 2.528 0 0 1-2.521-2.521 2.528 2.528 0 0 1 2.521-2.521h6.312A2.528 2.528 0 0 1 24 15.166a2.528 2.528 0 0 1-2.522 2.521h-6.312z'/%3E%3C/svg%3E") no-repeat center / contain;
+    }
+
+    .slack-channel-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -567,6 +599,10 @@
           <button class="btn btn-secondary" id="downloadBtn">Download</button>
           <button class="btn btn-secondary" id="copyBtn">Copy to Clipboard</button>
         </div>
+        <button class="btn btn-slack" id="slackBtn" style="display: none;">
+          <span class="slack-icon"></span> Share to Slack
+        </button>
+        <div class="slack-channel-label" id="slackChannelLabel" style="display: none;"></div>
 
         <div class="history-section" id="historySection" style="display: none;">
           <div class="card-title">History</div>
@@ -600,18 +636,24 @@
     const historyGrid = document.getElementById('historyGrid');
     const techUploadZone = document.getElementById('techUploadZone');
     const techUploadInput = document.getElementById('techUploadInput');
+    const slackBtn = document.getElementById('slackBtn');
+    const slackChannelLabel = document.getElementById('slackChannelLabel');
 
     let currentImageUrl = null;
     let currentBlob = null;
+    let currentFormData = null;
+    let slackEnabled = false;
+    let slackChannel = '';
     let history = [];
 
     // ---- Load dynamic options ----
     async function loadOptions() {
       try {
-        const [techRes, templateRes, platformRes] = await Promise.all([
+        const [techRes, templateRes, platformRes, slackRes] = await Promise.all([
           fetch('/api/technicians'),
           fetch('/api/templates'),
           fetch('/api/platforms'),
+          fetch('/api/slack/status'),
         ]);
 
         const techs = await techRes.json();
@@ -638,6 +680,10 @@
           opt.textContent = p.label;
           sourceSelect.appendChild(opt);
         });
+
+        const slackStatus = await slackRes.json();
+        slackEnabled = slackStatus.configured;
+        slackChannel = slackStatus.channel || '#reviews';
       } catch (err) {
         console.error('Failed to load options:', err);
       }
@@ -750,6 +796,15 @@
 
         previewArea.innerHTML = `<img src="${currentImageUrl}" alt="Generated Review" class="preview-image" />`;
         actionButtons.style.display = 'flex';
+        currentFormData = formData;
+
+        if (slackEnabled) {
+          slackBtn.style.display = 'flex';
+          slackChannelLabel.style.display = 'block';
+          slackChannelLabel.textContent = `Posts to ${slackChannel}`;
+          slackBtn.disabled = false;
+          slackBtn.innerHTML = '<span class="slack-icon"></span> Share to Slack';
+        }
 
         addToHistory(currentImageUrl, formData);
 
@@ -786,6 +841,29 @@
         showToast('Copied to clipboard!');
       } catch (err) {
         showToast('Copy failed — try downloading instead');
+      }
+    });
+
+    // ---- Share to Slack ----
+    slackBtn.addEventListener('click', async () => {
+      if (!currentFormData) return;
+      slackBtn.disabled = true;
+      slackBtn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px;"></span> Posting...';
+
+      try {
+        const res = await fetch('/api/share/slack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentFormData),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        showToast(`Shared to ${slackChannel}`);
+        slackBtn.innerHTML = '<span class="slack-icon"></span> Shared!';
+      } catch (err) {
+        showToast('Slack share failed: ' + err.message);
+        slackBtn.disabled = false;
+        slackBtn.innerHTML = '<span class="slack-icon"></span> Share to Slack';
       }
     });
 

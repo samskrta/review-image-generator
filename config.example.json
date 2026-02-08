@@ -5,5 +5,13 @@
     "brandColorDark": "#8b0000",
     "logoUrl": "/logo.png",
     "phone": "(555) 123-4567"
+  },
+  "slack": {
+    "botToken": "",
+    "channel": "#reviews",
+    "technicians": {
+      "John Smith": "U0123456789",
+      "Jane Doe": "U9876543210"
+    }
   }
 }

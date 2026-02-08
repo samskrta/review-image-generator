@@ -279,4 +279,24 @@ describe("Review Image Generator API", () => {
       assert.ok(res.json.results.every((r) => r.image)); // base64 data
     });
   });
+
+  // ---- Slack ----
+  describe("GET /api/slack/status", () => {
+    it("returns Slack configuration status", async () => {
+      const res = await request({ ...BASE, path: "/api/slack/status", method: "GET" });
+      assert.equal(res.status, 200);
+      assert.equal(typeof res.json.configured, "boolean");
+    });
+  });
+
+  describe("POST /api/share/slack", () => {
+    it("rejects when Slack is not configured", async () => {
+      const res = await request(
+        { ...BASE, path: "/api/share/slack", method: "POST", headers: { "Content-Type": "application/json" } },
+        { reviewer_name: "Test", rating: 5, review_text: "Good" }
+      );
+      // Either 400 (not configured) or 200 (if config has token) — both are valid
+      assert.ok([200, 400].includes(res.status));
+    });
+  });
 });

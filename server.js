@@ -5,6 +5,7 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const https = require("https");
 
 // ---------------------------------------------------------------------------
 // Config loading with graceful error
@@ -456,6 +457,174 @@ app.get("/generate", async (req, res) => {
     }
     console.error("Error generating image:", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Slack integration
+// ---------------------------------------------------------------------------
+
+function slackConfigured() {
+  return !!(config.slack && config.slack.botToken);
+}
+
+function getSlackTechMention(techName) {
+  if (!techName || !config.slack || !config.slack.technicians) return techName || "";
+  const slackId = config.slack.technicians[techName];
+  if (slackId) return `<@${slackId}>`;
+  // Try case-insensitive match
+  const key = Object.keys(config.slack.technicians).find(
+    (k) => k.toLowerCase() === techName.toLowerCase()
+  );
+  if (key) return `<@${config.slack.technicians[key]}>`;
+  return techName;
+}
+
+function slackApiRequest(method, apiPath, token, body) {
+  return new Promise((resolve, reject) => {
+    const payload = typeof body === "string" ? body : JSON.stringify(body);
+    const isMultipart = typeof body === "object" && body._multipart;
+    let headers;
+    let data;
+
+    if (isMultipart) {
+      const boundary = "----SlackBoundary" + crypto.randomBytes(8).toString("hex");
+      const parts = [];
+      for (const [key, val] of Object.entries(body.fields)) {
+        parts.push(
+          `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${val}\r\n`
+        );
+      }
+      if (body.file) {
+        parts.push(
+          `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${body.file.filename}"\r\nContent-Type: ${body.file.contentType}\r\n\r\n`
+        );
+        parts.push(body.file.data);
+        parts.push("\r\n");
+      }
+      parts.push(`--${boundary}--\r\n`);
+
+      const bufferParts = parts.map((p) => (typeof p === "string" ? Buffer.from(p) : p));
+      data = Buffer.concat(bufferParts);
+      headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": `multipart/form-data; boundary=${boundary}`,
+        "Content-Length": data.length,
+      };
+    } else {
+      data = Buffer.from(payload);
+      headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": data.length,
+      };
+    }
+
+    const req = https.request(
+      {
+        hostname: "slack.com",
+        path: `/api/${apiPath}`,
+        method,
+        headers,
+      },
+      (res) => {
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(Buffer.concat(chunks).toString()));
+          } catch {
+            reject(new Error("Invalid Slack API response"));
+          }
+        });
+      }
+    );
+    req.on("error", reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+// Expose Slack config status to frontend
+app.get("/api/slack/status", (req, res) => {
+  res.json({
+    configured: slackConfigured(),
+    channel: config.slack ? config.slack.channel || "#reviews" : null,
+  });
+});
+
+// Share to Slack
+app.post("/api/share/slack", async (req, res) => {
+  try {
+    if (!slackConfigured()) {
+      return res.status(400).json({
+        error: "Slack not configured. Set slack.botToken in config.json.",
+      });
+    }
+
+    const { reviewer_name, rating, review_text, tech_name, source, message } = req.body;
+
+    if (!reviewer_name || !rating || !review_text) {
+      return res.status(400).json({ error: "Missing review data (reviewer_name, rating, review_text)" });
+    }
+
+    // First, generate the image
+    const errors = validateGenerateInput(req.body);
+    if (errors.length > 0) {
+      return res.status(400).json({ error: "Validation failed", details: errors });
+    }
+
+    const result = await renderImage(req.body, req);
+
+    const token = config.slack.botToken;
+    const channel = config.slack.channel || "#reviews";
+    const stars = "\u2B50".repeat(Math.min(Math.max(parseInt(rating) || 0, 0), 5));
+
+    // Build message text
+    const techMention = tech_name ? getSlackTechMention(tech_name) : "";
+    const platformLabel = source && PLATFORM_ICONS[source] ? ` (${PLATFORM_ICONS[source].label})` : "";
+    const customMsg = message ? `\n${message}` : "";
+
+    const slackText =
+      `${stars} *New ${rating}-Star Review*${platformLabel}\n` +
+      `*${reviewer_name}* says:\n` +
+      `> ${review_text}\n` +
+      (techMention ? `Technician: ${techMention}\n` : "") +
+      customMsg;
+
+    // Upload file to Slack (files.upload v1 — widely supported)
+    const ext = result.format === "jpeg" ? "jpg" : "png";
+    const uploadResult = await slackApiRequest("POST", "files.upload", token, {
+      _multipart: true,
+      fields: {
+        channels: channel,
+        initial_comment: slackText,
+        filename: `review-${reviewer_name.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.${ext}`,
+        title: `${rating}-Star Review from ${reviewer_name}`,
+      },
+      file: {
+        filename: `review.${ext}`,
+        contentType: result.format === "jpeg" ? "image/jpeg" : "image/png",
+        data: result.buffer,
+      },
+    });
+
+    if (!uploadResult.ok) {
+      console.error("Slack API error:", uploadResult.error);
+      return res.status(502).json({
+        error: "Slack API error",
+        detail: uploadResult.error,
+      });
+    }
+
+    res.json({
+      success: true,
+      channel,
+      messageTs: uploadResult.file ? uploadResult.file.shares : null,
+    });
+  } catch (err) {
+    console.error("Slack share error:", err);
+    res.status(500).json({ error: "Failed to share to Slack" });
   }
 });
 

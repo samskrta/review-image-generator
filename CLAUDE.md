@@ -81,6 +81,8 @@ When `BASE_URL` is not set, the server derives it from the incoming request's `H
 | GET    | `/api/platforms`           | Lists supported review platforms          |
 | GET    | `/api/technicians`         | Lists technician photos                  |
 | POST   | `/api/technicians/upload`  | Upload a technician photo                |
+| GET    | `/api/slack/status`        | Returns Slack integration status         |
+| POST   | `/api/share/slack`         | Share a review image to Slack            |
 | POST   | `/generate`                | Generate a review card image             |
 | GET    | `/generate`                | Generate via query params (simple integrations) |
 | POST   | `/generate/batch`          | Generate multiple images at once         |
@@ -188,6 +190,50 @@ docker run -p 3000:3000 -v $(pwd)/config.json:/app/config.json review-image-gene
 ```
 
 The Dockerfile uses `node:18-slim` with system Chromium. Puppeteer `--no-sandbox` flags are intentional for container use.
+
+## Slack Integration
+
+The app can share generated review images directly to a Slack channel with technician @-mentions.
+
+### Setup
+
+Add a `slack` block to `config.json`:
+
+```json
+{
+  "company": { ... },
+  "slack": {
+    "botToken": "xoxb-your-bot-token",
+    "channel": "#reviews",
+    "technicians": {
+      "John Smith": "U0123456789",
+      "Jane Doe": "U9876543210"
+    }
+  }
+}
+```
+
+**Requirements:**
+- A Slack Bot Token (`xoxb-...`) with `files:write` and `chat:write` scopes
+- The bot must be invited to the target channel
+- The `technicians` map links technician display names to their Slack User IDs
+
+### How it works
+
+1. `GET /api/slack/status` — frontend checks if Slack is configured; if so, shows the "Share to Slack" button
+2. `POST /api/share/slack` — generates the image, uploads it to the configured Slack channel with a formatted message
+3. If the review includes a `tech_name` that matches a key in `slack.technicians`, the technician is @-mentioned in the Slack message (e.g., `Technician: <@U0123456789>`)
+
+### Slack message format
+
+```
+:star::star::star::star::star: *New 5-Star Review* (Google Review)
+*Jane D.* says:
+> Amazing service, highly recommend!
+Technician: @John Smith
+```
+
+The review card image is attached as a file upload to the message.
 
 ## Code Style
 
