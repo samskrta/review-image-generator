@@ -37,7 +37,7 @@
     .bg-pattern {
       position: fixed;
       inset: 0;
-      background: 
+      background:
         radial-gradient(ellipse 80% 50% at 50% -20%, rgba(196, 18, 48, 0.15), transparent),
         radial-gradient(ellipse 60% 40% at 100% 100%, rgba(30, 42, 74, 0.2), transparent);
       pointer-events: none;
@@ -320,6 +320,12 @@
       gap: 1rem;
     }
 
+    .row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+    }
+
     .toast {
       position: fixed;
       bottom: 2rem;
@@ -360,15 +366,98 @@
       font-size: 0.85rem;
       color: var(--text-muted);
     }
+
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+    }
+
+    .history-section {
+      margin-top: 2rem;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .history-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    .history-item:hover {
+      border-color: var(--accent);
+    }
+
+    .history-item img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+    }
+
+    .history-item .delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .history-item:hover .delete-btn {
+      display: flex;
+    }
+
+    .drag-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 0.5rem;
+    }
+
+    .drag-zone:hover, .drag-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(196, 18, 48, 0.05);
+    }
+
+    .drag-zone input[type="file"] {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="bg-pattern"></div>
-  
+
   <div class="container">
     <header>
       <div class="logo">
-        <div class="logo-icon">⭐</div>
+        <div class="logo-icon"></div>
       </div>
       <h1>Review Image Generator</h1>
       <p class="subtitle">Transform customer reviews into shareable social graphics</p>
@@ -377,7 +466,7 @@
     <div class="main-grid">
       <div class="card">
         <div class="card-title">Review Details</div>
-        
+
         <form id="reviewForm">
           <div class="form-group">
             <label for="reviewer_name">Reviewer Name</label>
@@ -394,16 +483,20 @@
                 <img id="techPreviewImg" src="" alt="Technician" />
                 <span id="techPreviewName"></span>
               </div>
+              <div class="drag-zone" id="techUploadZone">
+                Drop photo or click to upload
+                <input type="file" id="techUploadInput" accept="image/*" />
+              </div>
             </div>
 
             <div class="form-group">
               <label>Rating</label>
               <div class="rating-group">
-                <button type="button" class="star-btn active" data-rating="1">★</button>
-                <button type="button" class="star-btn active" data-rating="2">★</button>
-                <button type="button" class="star-btn active" data-rating="3">★</button>
-                <button type="button" class="star-btn active" data-rating="4">★</button>
-                <button type="button" class="star-btn active" data-rating="5">★</button>
+                <button type="button" class="star-btn active" data-rating="1">&#9733;</button>
+                <button type="button" class="star-btn active" data-rating="2">&#9733;</button>
+                <button type="button" class="star-btn active" data-rating="3">&#9733;</button>
+                <button type="button" class="star-btn active" data-rating="4">&#9733;</button>
+                <button type="button" class="star-btn active" data-rating="5">&#9733;</button>
               </div>
               <input type="hidden" id="rating" name="rating" value="5" />
             </div>
@@ -414,36 +507,84 @@
             <textarea id="review_text" name="review_text" placeholder="The technicians were so knowledgeable and kind... explained everything to me in detail." required></textarea>
           </div>
 
+          <div class="row-3">
+            <div class="form-group">
+              <label for="template">Template</label>
+              <select id="template" name="template">
+                <option value="default">Default</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="size">Size</label>
+              <select id="size" name="size">
+                <option value="square">Square (1080x1080)</option>
+                <option value="portrait">Portrait (1080x1350)</option>
+                <option value="story">Story (1080x1920)</option>
+                <option value="landscape">Landscape (1200x630)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="source">Platform</label>
+              <select id="source" name="source">
+                <option value="">None</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group">
+              <label for="format">Format</label>
+              <select id="format" name="format">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPEG</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <!-- spacer for alignment -->
+            </div>
+          </div>
+
           <button type="submit" class="btn btn-primary" id="generateBtn">
-            <span>🎨</span> Generate Image
+            Generate Image
           </button>
         </form>
       </div>
 
       <div class="card">
         <div class="card-title">Preview</div>
-        
+
         <div class="preview-area" id="previewArea">
           <div class="empty-state">
-            <div class="empty-state-icon">🖼️</div>
+            <div class="empty-state-icon"></div>
             <p>Your generated image will appear here</p>
           </div>
         </div>
 
-        <button class="btn btn-secondary" id="downloadBtn" style="display: none;">
-          <span>⬇️</span> Download Image
-        </button>
+        <div class="btn-row" id="actionButtons" style="display: none;">
+          <button class="btn btn-secondary" id="downloadBtn">Download</button>
+          <button class="btn btn-secondary" id="copyBtn">Copy to Clipboard</button>
+        </div>
+
+        <div class="history-section" id="historySection" style="display: none;">
+          <div class="card-title">History</div>
+          <div class="history-grid" id="historyGrid"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="toast" id="toast">Image downloaded!</div>
+  <div class="toast" id="toast"></div>
 
   <script>
     const form = document.getElementById('reviewForm');
     const previewArea = document.getElementById('previewArea');
     const generateBtn = document.getElementById('generateBtn');
     const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const actionButtons = document.getElementById('actionButtons');
     const toast = document.getElementById('toast');
     const starBtns = document.querySelectorAll('.star-btn');
     const ratingInput = document.getElementById('rating');
@@ -451,29 +592,98 @@
     const techPreview = document.getElementById('techPreview');
     const techPreviewImg = document.getElementById('techPreviewImg');
     const techPreviewName = document.getElementById('techPreviewName');
-    
-    let currentImageUrl = null;
-    let technicians = [];
+    const templateSelect = document.getElementById('template');
+    const sizeSelect = document.getElementById('size');
+    const sourceSelect = document.getElementById('source');
+    const formatSelect = document.getElementById('format');
+    const historySection = document.getElementById('historySection');
+    const historyGrid = document.getElementById('historyGrid');
+    const techUploadZone = document.getElementById('techUploadZone');
+    const techUploadInput = document.getElementById('techUploadInput');
 
-    // Load technicians
-    async function loadTechnicians() {
+    let currentImageUrl = null;
+    let currentBlob = null;
+    let history = [];
+
+    // ---- Load dynamic options ----
+    async function loadOptions() {
       try {
-        const res = await fetch('/api/technicians');
-        technicians = await res.json();
-        
-        technicians.forEach(tech => {
+        const [techRes, templateRes, platformRes] = await Promise.all([
+          fetch('/api/technicians'),
+          fetch('/api/templates'),
+          fetch('/api/platforms'),
+        ]);
+
+        const techs = await techRes.json();
+        techs.forEach(tech => {
           const opt = document.createElement('option');
           opt.value = tech.url;
           opt.textContent = tech.name;
           techSelect.appendChild(opt);
         });
+
+        const templates = await templateRes.json();
+        templates.forEach(t => {
+          if (t.name === 'default') return;
+          const opt = document.createElement('option');
+          opt.value = t.name;
+          opt.textContent = t.name.charAt(0).toUpperCase() + t.name.slice(1);
+          templateSelect.appendChild(opt);
+        });
+
+        const platforms = await platformRes.json();
+        platforms.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.key;
+          opt.textContent = p.label;
+          sourceSelect.appendChild(opt);
+        });
       } catch (err) {
-        console.error('Failed to load technicians:', err);
+        console.error('Failed to load options:', err);
       }
     }
-    loadTechnicians();
+    loadOptions();
 
-    // Technician preview
+    // ---- Technician photo upload ----
+    techUploadZone.addEventListener('click', () => techUploadInput.click());
+    techUploadZone.addEventListener('dragover', (e) => { e.preventDefault(); techUploadZone.classList.add('dragover'); });
+    techUploadZone.addEventListener('dragleave', () => techUploadZone.classList.remove('dragover'));
+    techUploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      techUploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) uploadTechPhoto(e.dataTransfer.files[0]);
+    });
+    techUploadInput.addEventListener('change', () => {
+      if (techUploadInput.files.length) uploadTechPhoto(techUploadInput.files[0]);
+    });
+
+    async function uploadTechPhoto(file) {
+      const name = prompt('Enter technician name:');
+      if (!name) return;
+
+      try {
+        const res = await fetch(`/api/technicians/upload?name=${encodeURIComponent(name)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': file.type },
+          body: file,
+        });
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+
+        const opt = document.createElement('option');
+        opt.value = data.url;
+        opt.textContent = data.name;
+        techSelect.appendChild(opt);
+        techSelect.value = data.url;
+        techSelect.dispatchEvent(new Event('change'));
+
+        showToast('Technician photo uploaded');
+      } catch (err) {
+        showToast('Upload failed');
+      }
+    }
+
+    // ---- Technician preview ----
     techSelect.addEventListener('change', () => {
       const url = techSelect.value;
       if (url) {
@@ -485,33 +695,31 @@
       }
     });
 
-    // Star rating interaction
+    // ---- Star rating ----
     starBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const rating = parseInt(btn.dataset.rating);
         ratingInput.value = rating;
-        
         starBtns.forEach(star => {
-          const starRating = parseInt(star.dataset.rating);
-          star.classList.toggle('active', starRating <= rating);
+          star.classList.toggle('active', parseInt(star.dataset.rating) <= rating);
         });
       });
     });
 
-    // Form submission
+    // ---- Form submission ----
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       generateBtn.disabled = true;
       generateBtn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;"></span> Generating...';
-      
+
       previewArea.innerHTML = `
         <div class="loading">
           <div class="spinner"></div>
           <span class="status-text">Rendering your review card...</span>
         </div>
       `;
-      downloadBtn.style.display = 'none';
+      actionButtons.style.display = 'none';
 
       const selectedTech = techSelect.options[techSelect.selectedIndex];
       const formData = {
@@ -519,7 +727,11 @@
         rating: parseInt(ratingInput.value),
         review_text: document.getElementById('review_text').value,
         tech_photo_url: techSelect.value || null,
-        tech_name: techSelect.value ? selectedTech.textContent : null
+        tech_name: techSelect.value ? selectedTech.textContent : null,
+        template: templateSelect.value || 'default',
+        size: sizeSelect.value || 'square',
+        format: formatSelect.value || 'png',
+        source: sourceSelect.value || undefined,
       };
 
       try {
@@ -533,36 +745,93 @@
 
         const blob = await response.blob();
         if (currentImageUrl) URL.revokeObjectURL(currentImageUrl);
+        currentBlob = blob;
         currentImageUrl = URL.createObjectURL(blob);
 
         previewArea.innerHTML = `<img src="${currentImageUrl}" alt="Generated Review" class="preview-image" />`;
-        downloadBtn.style.display = 'flex';
-        
+        actionButtons.style.display = 'flex';
+
+        addToHistory(currentImageUrl, formData);
+
       } catch (err) {
         previewArea.innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">❌</div>
+            <div class="empty-state-icon"></div>
             <p>Failed to generate image. Please try again.</p>
           </div>
         `;
       } finally {
         generateBtn.disabled = false;
-        generateBtn.innerHTML = '<span>🎨</span> Generate Image';
+        generateBtn.innerHTML = 'Generate Image';
       }
     });
 
-    // Download button
+    // ---- Download ----
     downloadBtn.addEventListener('click', () => {
       if (!currentImageUrl) return;
-      
+      const ext = formatSelect.value || 'png';
       const link = document.createElement('a');
       link.href = currentImageUrl;
-      link.download = `review-${Date.now()}.png`;
+      link.download = `review-${Date.now()}.${ext}`;
       link.click();
+      showToast('Image downloaded!');
+    });
 
+    // ---- Copy to clipboard ----
+    copyBtn.addEventListener('click', async () => {
+      if (!currentBlob) return;
+      try {
+        const item = new ClipboardItem({ [currentBlob.type]: currentBlob });
+        await navigator.clipboard.write([item]);
+        showToast('Copied to clipboard!');
+      } catch (err) {
+        showToast('Copy failed — try downloading instead');
+      }
+    });
+
+    // ---- History ----
+    function addToHistory(url, params) {
+      history.unshift({ url, name: params.reviewer_name, timestamp: Date.now() });
+      if (history.length > 20) history.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        historySection.style.display = 'none';
+        return;
+      }
+      historySection.style.display = 'block';
+      historyGrid.innerHTML = history.map((item, idx) => `
+        <div class="history-item" data-idx="${idx}">
+          <img src="${item.url}" alt="${item.name}" />
+          <button class="delete-btn" data-idx="${idx}">&times;</button>
+        </div>
+      `).join('');
+
+      historyGrid.querySelectorAll('.history-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (e.target.classList.contains('delete-btn')) {
+            const idx = parseInt(e.target.dataset.idx);
+            history.splice(idx, 1);
+            renderHistory();
+            return;
+          }
+          const idx = parseInt(el.dataset.idx);
+          const item = history[idx];
+          previewArea.innerHTML = `<img src="${item.url}" alt="${item.name}" class="preview-image" />`;
+          currentImageUrl = item.url;
+          actionButtons.style.display = 'flex';
+        });
+      });
+    }
+
+    // ---- Toast ----
+    function showToast(msg) {
+      toast.textContent = msg;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2500);
-    });
+    }
   </script>
 </body>
 </html>

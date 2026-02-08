@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Review Card — Minimal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1080px;
+      font-family: "Inter", sans-serif;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px;
+    }
+
+    .stars {
+      font-size: 48px;
+      color: #f59e0b;
+      letter-spacing: 8px;
+      margin-bottom: 48px;
+    }
+
+    .review-text {
+      font-size: 36px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: #1a1a1a;
+      text-align: center;
+      max-width: 860px;
+      margin-bottom: 48px;
+    }
+
+    .divider {
+      width: 60px;
+      height: 3px;
+      background: {{BRAND_COLOR}};
+      margin-bottom: 32px;
+    }
+
+    .reviewer-name {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .tech-block {
+      display: {{TECH_DISPLAY}};
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .tech-photo-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .tech-photo-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .tech-name {
+      font-size: 16px;
+      color: #666;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-container {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .logo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .company-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: #999;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Low rating */
+    body.low-rating { background: #f5f5f5; }
+    .low-rating .stars { color: #999; }
+    .low-rating .review-text { color: #555; }
+    .low-rating .divider { background: #ccc; }
+    .low-rating .footer { display: none; }
+  </style>
+</head>
+<body class="{{LOW_RATING_CLASS}}">
+  {{PLATFORM_BADGE}}
+  <div class="stars">{{STARS}}</div>
+  <div class="review-text" id="reviewText">{{REVIEW_TEXT}}</div>
+  <div class="divider"></div>
+  <div class="reviewer-name">{{REVIEWER_NAME}}</div>
+  <div class="tech-block">
+    <div class="tech-photo-wrapper"><img src="{{TECH_PHOTO_URL}}" alt="" /></div>
+    <span class="tech-name">{{TECH_NAME}}</span>
+  </div>
+  <div class="footer">
+    <div class="logo-container"><img src="{{LOGO_URL}}" alt="" /></div>
+    <span class="company-name">{{COMPANY_NAME}}</span>
+  </div>
+
+  <script>
+    (function() {
+      const text = document.getElementById('reviewText');
+      const maxHeight = 400;
+      let fontSize = 36;
+      text.style.fontSize = fontSize + 'px';
+      while (text.scrollHeight > maxHeight && fontSize > 18) {
+        fontSize -= 2;
+        text.style.fontSize = fontSize + 'px';
+      }
+    })();
+  </script>
+</body>
+</html>

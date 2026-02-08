@@ -1,0 +1,9 @@
+{
+  "company": {
+    "name": "Your Company Name",
+    "brandColor": "#c41230",
+    "brandColorDark": "#8b0000",
+    "logoUrl": "/logo.png",
+    "phone": "(555) 123-4567"
+  }
+}

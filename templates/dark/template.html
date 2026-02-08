@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Review Card — Dark</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1080px;
+      font-family: "Outfit", sans-serif;
+      background: #0a0a0f;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .bg-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, {{BRAND_COLOR}}33, transparent);
+      pointer-events: none;
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quote-icon {
+      font-size: 72px;
+      color: {{BRAND_COLOR}};
+      opacity: 0.6;
+      margin-bottom: 32px;
+    }
+
+    .review-text {
+      font-size: 36px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: #e4e4e7;
+      text-align: center;
+      max-width: 860px;
+      margin-bottom: 40px;
+    }
+
+    .stars {
+      font-size: 36px;
+      color: #fbbf24;
+      letter-spacing: 6px;
+      margin-bottom: 24px;
+    }
+
+    .reviewer-name {
+      font-size: 22px;
+      font-weight: 600;
+      color: #a1a1aa;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 32px 56px;
+      background: rgba(255,255,255,0.03);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-container {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .logo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .company-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #71717a;
+      letter-spacing: 0.03em;
+    }
+
+    .phone {
+      font-size: 18px;
+      font-weight: 500;
+      color: #52525b;
+    }
+
+    .tech-block {
+      display: {{TECH_DISPLAY}};
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tech-photo-wrapper {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid {{BRAND_COLOR}};
+    }
+
+    .tech-photo-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .tech-name {
+      font-size: 16px;
+      color: #71717a;
+    }
+
+    /* Low rating */
+    body.low-rating .bg-glow { display: none; }
+    .low-rating .quote-icon { color: #333; }
+    .low-rating .review-text { color: #888; }
+    .low-rating .stars { color: #555; }
+    .low-rating .brand, .low-rating .phone { display: none; }
+  </style>
+</head>
+<body class="{{LOW_RATING_CLASS}}">
+  {{PLATFORM_BADGE}}
+  <div class="bg-glow"></div>
+  <div class="content">
+    <div class="quote-icon">&ldquo;</div>
+    <div class="review-text" id="reviewText">{{REVIEW_TEXT}}</div>
+    <div class="stars">{{STARS}}</div>
+    <div class="reviewer-name">{{REVIEWER_NAME}}</div>
+  </div>
+  <div class="bottom-bar">
+    <div class="brand">
+      <div class="logo-container"><img src="{{LOGO_URL}}" alt="" /></div>
+      <span class="company-name">{{COMPANY_NAME}}</span>
+    </div>
+    <div class="tech-block">
+      <span class="tech-name">{{TECH_NAME}}</span>
+      <div class="tech-photo-wrapper"><img src="{{TECH_PHOTO_URL}}" alt="" /></div>
+    </div>
+    <span class="phone">{{COMPANY_PHONE}}</span>
+  </div>
+
+  <script>
+    (function() {
+      const text = document.getElementById('reviewText');
+      const maxHeight = 400;
+      let fontSize = 36;
+      text.style.fontSize = fontSize + 'px';
+      while (text.scrollHeight > maxHeight && fontSize > 18) {
+        fontSize -= 2;
+        text.style.fontSize = fontSize + 'px';
+      }
+    })();
+  </script>
+</body>
+</html>
