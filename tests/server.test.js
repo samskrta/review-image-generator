@@ -299,4 +299,74 @@ describe("Review Image Generator API", () => {
       assert.ok([200, 400].includes(res.status));
     });
   });
+
+  // ---- Ingestion ----
+  describe("GET /api/ingestion/status", () => {
+    it("returns ingestion status", async () => {
+      const res = await request({ ...BASE, path: "/api/ingestion/status", method: "GET" });
+      // If ingestion is disabled, the route may not be mounted — 404 is acceptable
+      if (res.status === 200) {
+        assert.equal(typeof res.json.enabled, "boolean");
+        assert.ok(res.json.stats || res.json.adapters !== undefined);
+      } else {
+        assert.ok([404].includes(res.status));
+      }
+    });
+  });
+
+  describe("GET /api/ingestion/reviews", () => {
+    it("returns reviews list or 404 when disabled", async () => {
+      const res = await request({ ...BASE, path: "/api/ingestion/reviews?limit=5", method: "GET" });
+      if (res.status === 200) {
+        assert.ok(Array.isArray(res.json.reviews));
+        assert.equal(typeof res.json.total, "number");
+      } else {
+        assert.ok([404].includes(res.status));
+      }
+    });
+  });
+
+  describe("POST /api/ingestion/import", () => {
+    it("imports JSON reviews or returns 404 when disabled", async () => {
+      const res = await request(
+        { ...BASE, path: "/api/ingestion/import", method: "POST", headers: { "Content-Type": "application/json" } },
+        {
+          source: "test",
+          reviews: [
+            { reviewer_name: "Test User", rating: 5, review_text: "Great service!" },
+          ],
+        }
+      );
+      if (res.status === 200) {
+        assert.equal(typeof res.json.imported, "number");
+      } else {
+        assert.ok([404].includes(res.status));
+      }
+    });
+  });
+
+  describe("POST /api/ingestion/webhook/test", () => {
+    it("accepts webhook payload or returns 404 when disabled", async () => {
+      const res = await request(
+        { ...BASE, path: "/api/ingestion/webhook/test", method: "POST", headers: { "Content-Type": "application/json" } },
+        { reviewer_name: "Webhook User", rating: 4, review_text: "Pushed via webhook" }
+      );
+      if (res.status === 200) {
+        assert.equal(res.json.accepted, true);
+      } else {
+        assert.ok([404].includes(res.status));
+      }
+    });
+  });
+
+  describe("GET /api/ingestion/webhook/test", () => {
+    it("responds to verification handshake or returns 404", async () => {
+      const res = await request({ ...BASE, path: "/api/ingestion/webhook/test?verification=abc123", method: "GET" });
+      if (res.status === 200) {
+        assert.equal(res.json.verification, "abc123");
+      } else {
+        assert.ok([404].includes(res.status));
+      }
+    });
+  });
 });

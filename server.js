@@ -683,12 +683,77 @@ app.post("/generate/batch", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Ingestion pipeline
+// ---------------------------------------------------------------------------
+const ingestion = require("./ingestion");
+
+function initIngestion() {
+  const ingestionConfig = config.ingestion || {};
+  if (!ingestionConfig.enabled) {
+    console.log("[ingestion] Disabled (set ingestion.enabled = true in config.json to enable)");
+    return;
+  }
+
+  // Build helper to share to Slack from the pipeline
+  async function pipelineShareToSlack(review, imageBuffer, imageFormat) {
+    if (!slackConfigured()) return;
+    const token = config.slack.botToken;
+    const channel = config.slack.channel || "#reviews";
+    const stars = "\u2B50".repeat(Math.min(Math.max(review.rating || 0, 0), 5));
+    const techMention = review.techName ? getSlackTechMention(review.techName) : "";
+    const platformLabel = review.source && PLATFORM_ICONS[review.source] ? ` (${PLATFORM_ICONS[review.source].label})` : "";
+
+    const slackText =
+      `${stars} *New ${review.rating}-Star Review*${platformLabel}\n` +
+      `*${review.reviewerName}* says:\n` +
+      `> ${review.reviewText}\n` +
+      (techMention ? `Technician: ${techMention}\n` : "");
+
+    const ext = imageFormat === "jpeg" ? "jpg" : "png";
+    await slackApiRequest("POST", "files.upload", token, {
+      _multipart: true,
+      fields: {
+        channels: channel,
+        initial_comment: slackText,
+        filename: `review-${review.reviewerName.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.${ext}`,
+        title: `${review.rating}-Star Review from ${review.reviewerName}`,
+      },
+      file: {
+        filename: `review.${ext}`,
+        contentType: imageFormat === "jpeg" ? "image/jpeg" : "image/png",
+        data: imageBuffer,
+      },
+    });
+  }
+
+  // Build a renderImage wrapper that doesn't need req (uses BASE_URL or defaults)
+  async function pipelineRenderImage(params) {
+    const fakeReq = { protocol: "http", get: () => `localhost:${PORT}` };
+    return renderImage(params, fakeReq);
+  }
+
+  const ingestionRouter = ingestion.init(config, {
+    renderImage: pipelineRenderImage,
+    shareToSlack: pipelineShareToSlack,
+  });
+
+  app.use("/api/ingestion", ingestionRouter);
+  console.log("[ingestion] Routes mounted at /api/ingestion");
+}
+
+// ---------------------------------------------------------------------------
 // Start server
 // ---------------------------------------------------------------------------
 async function start() {
   // Pre-launch browser so first request is fast
   await getBrowser();
   console.log("Puppeteer browser launched");
+
+  // Initialize ingestion system
+  initIngestion();
+  if (config.ingestion && config.ingestion.enabled) {
+    ingestion.startScheduler(config.ingestion.pollIntervalMinutes);
+  }
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
@@ -703,6 +768,7 @@ start().catch((err) => {
 // Graceful shutdown
 async function shutdown() {
   console.log("Shutting down...");
+  ingestion.stopScheduler();
   if (browser) {
     await browser.close();
     browser = null;

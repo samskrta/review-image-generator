@@ -481,6 +481,174 @@
       margin-top: 0.25rem;
       text-align: center;
     }
+
+    /* Ingestion dashboard */
+    .ingestion-section {
+      margin-top: 2rem;
+      animation: fadeUp 0.6s ease-out;
+      animation-delay: 0.3s;
+      animation-fill-mode: backwards;
+    }
+
+    .ingestion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .source-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .source-card:hover {
+      border-color: var(--accent);
+    }
+
+    .source-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .source-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-transform: capitalize;
+    }
+
+    .source-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+    }
+
+    .source-badge.enabled {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .source-badge.disabled {
+      background: rgba(113, 113, 122, 0.15);
+      color: var(--text-muted);
+    }
+
+    .source-stat {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .source-stat strong {
+      color: var(--text);
+    }
+
+    .ingestion-stats-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      flex: 1;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .stat-box .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-box .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-sm:hover {
+      background: var(--border);
+    }
+
+    .recent-reviews-list {
+      margin-top: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .review-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .review-item:last-child {
+      border-bottom: none;
+    }
+
+    .review-stars {
+      color: #f59e0b;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .review-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .review-meta .review-author {
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    .review-meta .review-snippet {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .review-source-tag {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      background: rgba(196, 18, 48, 0.15);
+      color: var(--accent);
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -609,6 +777,22 @@
           <div class="history-grid" id="historyGrid"></div>
         </div>
       </div>
+    </div>
+
+    <!-- Ingestion Dashboard -->
+    <div class="ingestion-section card" id="ingestionSection" style="display: none;">
+      <div class="card-title">Review Ingestion</div>
+
+      <div class="ingestion-stats-row" id="ingestionStats"></div>
+
+      <div class="ingestion-grid" id="ingestionAdapters"></div>
+
+      <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+        <button class="btn-sm" id="pollAllBtn">Poll All Sources</button>
+        <span class="status-text" id="pollStatus"></span>
+      </div>
+
+      <div class="recent-reviews-list" id="recentReviews"></div>
     </div>
   </div>
 
@@ -910,6 +1094,130 @@
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2500);
     }
+
+    // ---- Ingestion Dashboard ----
+    const ingestionSection = document.getElementById('ingestionSection');
+    const ingestionStats = document.getElementById('ingestionStats');
+    const ingestionAdapters = document.getElementById('ingestionAdapters');
+    const recentReviews = document.getElementById('recentReviews');
+    const pollAllBtn = document.getElementById('pollAllBtn');
+    const pollStatus = document.getElementById('pollStatus');
+
+    async function loadIngestionStatus() {
+      try {
+        const res = await fetch('/api/ingestion/status');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (!data.enabled) return;
+        ingestionSection.style.display = 'block';
+
+        // Stats row
+        const stats = data.stats || {};
+        ingestionStats.innerHTML = `
+          <div class="stat-box">
+            <div class="stat-value">${stats.totalIngested || 0}</div>
+            <div class="stat-label">Total Ingested</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">${stats.totalStored || 0}</div>
+            <div class="stat-label">Stored</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">${Object.keys(stats.bySource || {}).length}</div>
+            <div class="stat-label">Sources</div>
+          </div>
+        `;
+
+        // Adapter cards
+        const adapters = data.adapters || [];
+        ingestionAdapters.innerHTML = adapters.map(a => `
+          <div class="source-card">
+            <div class="source-header">
+              <span class="source-name">${a.name}</span>
+              <span class="source-badge ${a.enabled ? 'enabled' : 'disabled'}">${a.enabled ? 'Active' : 'Off'}</span>
+            </div>
+            <div class="source-stat">Reviews: <strong>${a.reviewCount || 0}</strong></div>
+            <div class="source-stat">Last poll: <strong>${a.lastPoll ? new Date(a.lastPoll).toLocaleString() : 'Never'}</strong></div>
+            ${a.enabled ? `<button class="btn-sm" style="margin-top:0.5rem" onclick="pollSource('${a.name}')">Poll Now</button>` : ''}
+          </div>
+        `).join('');
+
+        // Load recent reviews
+        loadRecentReviews();
+      } catch {
+        // Ingestion not enabled or not available
+      }
+    }
+
+    async function loadRecentReviews() {
+      try {
+        const res = await fetch('/api/ingestion/reviews?limit=20');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (!data.reviews || data.reviews.length === 0) {
+          recentReviews.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:0.75rem;">No reviews ingested yet.</p>';
+          return;
+        }
+
+        recentReviews.innerHTML = data.reviews.map(r => `
+          <div class="review-item">
+            <span class="review-stars">${'\u2605'.repeat(r.rating || 0)}</span>
+            <div class="review-meta">
+              <div class="review-author">${escapeText(r.reviewerName || 'Unknown')}</div>
+              <div class="review-snippet">${escapeText((r.reviewText || '').slice(0, 100))}</div>
+            </div>
+            <span class="review-source-tag">${r.source || 'unknown'}</span>
+          </div>
+        `).join('');
+      } catch {
+        // ignore
+      }
+    }
+
+    async function pollSource(name) {
+      pollStatus.textContent = `Polling ${name}...`;
+      try {
+        const res = await fetch(`/api/ingestion/poll/${name}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          pollStatus.textContent = `Error: ${data.error}`;
+        } else {
+          pollStatus.textContent = `${name}: ${data.new || 0} new, ${data.duplicate || 0} duplicates`;
+          loadIngestionStatus();
+        }
+      } catch (err) {
+        pollStatus.textContent = 'Poll failed';
+      }
+      setTimeout(() => { pollStatus.textContent = ''; }, 5000);
+    }
+
+    pollAllBtn.addEventListener('click', async () => {
+      pollAllBtn.disabled = true;
+      pollStatus.textContent = 'Polling all sources...';
+      try {
+        const res = await fetch('/api/ingestion/poll', { method: 'POST' });
+        const data = await res.json();
+        const results = data.results || {};
+        const summary = Object.entries(results).map(([k, v]) => `${k}: ${v.new || 0} new`).join(', ');
+        pollStatus.textContent = summary || 'Done';
+        loadIngestionStatus();
+      } catch {
+        pollStatus.textContent = 'Poll failed';
+      }
+      pollAllBtn.disabled = false;
+      setTimeout(() => { pollStatus.textContent = ''; }, 5000);
+    });
+
+    function escapeText(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Load ingestion status after page load
+    loadIngestionStatus();
   </script>
 </body>
 </html>

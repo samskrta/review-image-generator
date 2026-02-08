@@ -13,5 +13,36 @@
       "John Smith": "U0123456789",
       "Jane Doe": "U9876543210"
     }
+  },
+  "ingestion": {
+    "enabled": false,
+    "autoGenerate": false,
+    "autoShare": false,
+    "minRatingForAutoShare": 4,
+    "defaultTemplate": "default",
+    "defaultSize": "square",
+    "pollIntervalMinutes": 15,
+    "sources": {
+      "google": {
+        "accountId": "accounts/YOUR_ACCOUNT_ID",
+        "locationId": "locations/YOUR_LOCATION_ID",
+        "oauth": {
+          "clientId": "",
+          "clientSecret": "",
+          "refreshToken": ""
+        },
+        "pollIntervalMinutes": 30
+      },
+      "yelp": {
+        "apiKey": "",
+        "businessId": "your-business-alias",
+        "pollIntervalMinutes": 60
+      },
+      "bbb": {
+        "bearerToken": "",
+        "businessId": "YOUR_BBB_ID",
+        "pollIntervalMinutes": 120
+      }
+    }
   }
 }

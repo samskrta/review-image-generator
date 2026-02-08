@@ -15,9 +15,23 @@ review-image-generator/
 ├── templates/                 # Additional template variants
 │   ├── minimal/template.html  # Clean, centered design
 │   └── dark/template.html     # Dark-themed with glow effects
+├── ingestion/                 # Automated review ingestion pipeline
+│   ├── index.js               # Orchestrator — wires store, adapters, pipeline, scheduler
+│   ├── store.js               # JSON-file-backed review store with dedup
+│   ├── pipeline.js            # Auto-pipeline: deduplicate → generate → share
+│   ├── scheduler.js           # Polling scheduler with backoff and staggered starts
+│   ├── routes.js              # Ingestion API routes (webhook, import, status, poll)
+│   └── adapters/
+│       ├── base.js            # Abstract base adapter
+│       ├── generic.js         # Generic adapter for webhooks/imports/unknown sources
+│       ├── google.js          # Google Business Profile API with OAuth token refresh
+│       ├── yelp.js            # Yelp Fusion API (3-excerpt limitation)
+│       └── bbb.js             # BBB Partner API with offset pagination
 ├── public/
 │   ├── index.html             # Frontend web UI (vanilla JS, single file)
 │   └── technicians/           # Technician photos (created at runtime)
+├── data/                      # Runtime data directory (gitignored)
+│   └── reviews.json           # Persisted review store
 ├── tests/
 │   └── server.test.js         # Integration tests (Node.js test runner)
 ├── config.json                # Company branding config (not in repo, required)
@@ -86,6 +100,15 @@ When `BASE_URL` is not set, the server derives it from the incoming request's `H
 | POST   | `/generate`                | Generate a review card image             |
 | GET    | `/generate`                | Generate via query params (simple integrations) |
 | POST   | `/generate/batch`          | Generate multiple images at once         |
+| GET    | `/api/ingestion/status`    | Ingestion pipeline status and stats      |
+| GET    | `/api/ingestion/reviews`   | List recently ingested reviews           |
+| POST   | `/api/ingestion/poll`      | Trigger manual poll (all sources)        |
+| POST   | `/api/ingestion/poll/:src` | Trigger manual poll (single source)      |
+| POST   | `/api/ingestion/webhook/:src` | Receive webhook from a review platform |
+| GET    | `/api/ingestion/webhook/:src` | Webhook verification handshake        |
+| POST   | `/api/ingestion/import`    | Import reviews (JSON or CSV)             |
+| POST   | `/api/ingestion/reviews/:id/generate` | Generate image for stored review |
+| POST   | `/api/ingestion/reviews/:id/share` | Share stored review to Slack      |
 
 ### POST `/generate` — full request body
 
@@ -234,6 +257,94 @@ Technician: @John Smith
 ```
 
 The review card image is attached as a file upload to the message.
+
+## Review Ingestion Pipeline
+
+The app includes an automated pipeline for ingesting reviews from multiple platforms, deduplicating them, optionally generating images, and auto-sharing to Slack.
+
+### Setup
+
+Add an `ingestion` block to `config.json`:
+
+```json
+{
+  "ingestion": {
+    "enabled": true,
+    "autoGenerate": true,
+    "autoShare": true,
+    "minRatingForAutoShare": 4,
+    "pollIntervalMinutes": 15,
+    "sources": {
+      "google": {
+        "accountId": "accounts/123",
+        "locationId": "locations/456",
+        "oauth": { "clientId": "...", "clientSecret": "...", "refreshToken": "..." }
+      },
+      "yelp": { "apiKey": "...", "businessId": "your-biz" },
+      "bbb": { "bearerToken": "...", "businessId": "YOUR_ID" }
+    }
+  }
+}
+```
+
+### Architecture
+
+```
+Sources (Google, Yelp, BBB, webhooks, CSV import)
+  → Adapters (normalize to common review format)
+  → Pipeline (deduplicate → store → auto-generate image → auto-share to Slack)
+  → Store (JSON file persistence in data/reviews.json)
+```
+
+### Source Adapters
+
+Each adapter extends `BaseAdapter` and implements:
+- `initialize()` — validate config, set `this.enabled`
+- `fetchReviews(cursor)` — poll the API, return `{ reviews, cursor }`
+- `parseReviews(rawData)` — normalize webhook/import payloads
+
+| Adapter | API | Auth | Notes |
+|---------|-----|------|-------|
+| Google  | Business Profile v4 | OAuth2 (auto-refresh) | Full review text |
+| Yelp    | Fusion v3 | API Key | Returns 3 excerpt reviews only |
+| BBB     | Partner API | Bearer token | Offset-based pagination |
+| Generic | N/A | N/A | For webhooks, CSV imports, unknown sources |
+
+### Polling Scheduler
+
+- Per-adapter configurable intervals (default 15 min)
+- Staggered initial polls (5s apart) to avoid thundering herd
+- Exponential backoff on failures (up to 2 hours)
+- Per-adapter lock prevents concurrent polls of the same source
+
+### Webhooks
+
+Any platform can push reviews via `POST /api/ingestion/webhook/:source`. Supports:
+- Optional HMAC signature verification (`x-webhook-signature` or `x-hub-signature-256`)
+- Yelp-style GET verification handshake
+- Unknown sources use the generic adapter
+
+### Import
+
+`POST /api/ingestion/import` accepts:
+- **JSON:** `{ "source": "import", "reviews": [{ "reviewer_name": "...", ... }] }`
+- **CSV:** `Content-Type: text/csv` with headers: `reviewer_name,rating,review_text,review_date,source,tech_name`
+
+### Review Store
+
+- JSON file persistence at `data/reviews.json` with atomic writes (tmp → rename)
+- Debounced saves (5-second window)
+- Per-source cursor tracking for incremental polling
+- Automatic deduplication by review ID
+- `prune(maxAgeDays)` method for cleanup
+
+### Frontend Dashboard
+
+When ingestion is enabled, the web UI shows an "Ingestion" panel below the main form with:
+- Total ingested / stored / source count stats
+- Per-adapter status cards (active/off, review count, last poll time, poll button)
+- "Poll All Sources" button
+- Recent reviews list with stars, author, snippet, and source tag
 
 ## Code Style
 
